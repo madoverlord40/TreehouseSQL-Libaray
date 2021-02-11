@@ -1,5 +1,5 @@
 //blows up here...
-import sequelize from "./models/index.js";
+var sequelize = require("./models/index.js").sequelize;
 
 var createError = require('http-errors');
 var express = require('express');
@@ -40,5 +40,16 @@ app.use(function(err, req, res, next) {
   res.status(err.status || 500);
   res.render('error');
 });
+
+begin = async () => {
+  try {
+    await sequelize.authenticate();
+    console.log('Connection has been established successfully.');
+  } catch (error) {
+    console.error('Unable to connect to the database:', error);
+  }
+}
+
+begin();
 
 module.exports = app;
