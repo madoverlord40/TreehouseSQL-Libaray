@@ -82,10 +82,14 @@ router.post("/Books/:id/edit", FuncLib.asyncHandler(async(req, res, next) => {
 
     const book = await BookModel.findByPk(req.params.id);
     if (book !== null) {
-        result = await FuncLib.modifyBook(req.body, book);
+        try {
+            result = await FuncLib.modifyBook(req.body, book);
 
-        if (result.success) {
-            res.redirect("/");
+            if (result.success) {
+                res.redirect("/");
+            }
+        } catch (error) {
+            res.render('error', { message: "Ooops! Something went wrong!", status: error.status });
         }
     } else {
         res.render('error', { message: "Ooops! Something went wrong! The book id was not found!", status: '' });
@@ -114,8 +118,6 @@ router.post('/Books/:id/delete', FuncLib.asyncHandler(
         } else {
             res.render('error', { message: "Ooops! Something went wrong! The book id was not found!", status: '' });
         }
-
-
     }
 ));
 
