@@ -44,8 +44,8 @@ class FunctionLibrary {
 
             try {
 
-                newBook = await BookModel.create(bookData);
-                return { data: null, errors: [], success: true };
+                let newBook = await BookModel.create(bookData);
+                return { data: newBook, errors: [], success: true };
 
             } catch (error) {
                 if (error.name === "SequelizeValidationError") {

@@ -47,7 +47,7 @@ router.get('/Books/new', (req, res, next) => {
 router.post('/Books', FuncLib.asyncHandler(
     async(req, res) => {
         try {
-            const result = await FuncLib.addModifyBook(req.body);
+            const result = await FuncLib.addBook(req.body);
 
             if (result.success) {
                 res.redirect("/");
@@ -85,7 +85,7 @@ router.post("/Books/:id/edit", FuncLib.asyncHandler(async(req, res, next) => {
     try {
         const book = await BookModel.findByPk(req.params.id);
         if (book !== null) {
-            result = await FuncLib.addModifyBook(req.body, book);
+            result = await FuncLib.modifyBook(req.body, book);
 
             if (result.success) {
                 res.redirect("/");
