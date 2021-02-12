@@ -30,7 +30,7 @@ router.get('/', FuncLib.asyncHandler(
 router.get('/Books', (req, res, next) => {
     //just incase the database is not loaded, handle it.
     if (StoredBooks === null) {
-        res.render('error', { message: "Ooops! Something went wrong! The Database has not been loaded, please click home below!", errors: null });
+        res.render('error', { message: "Ooops! Something went wrong! The Database has not been loaded, please click home below!", status: '' });
     } else {
         res.render("index", { books: StoredBooks });
     }
@@ -52,10 +52,10 @@ router.post('/Books', FuncLib.asyncHandler(
             if (result.success) {
                 res.redirect("/");
             } else {
-                res.render("formerror", { newBook: result.data, errors: result.errors })
+                res.render("formerror", { newBook: result.data, status: result.errors.status })
             }
         } catch (error) {
-            res.render('error', { message: "Ooops! Something went wrong!", errors: error });
+            res.render('error', { message: "Ooops! Something went wrong!", status: error.status });
         }
     }
 ));
@@ -65,15 +65,12 @@ router.post('/Books', FuncLib.asyncHandler(
 */
 router.get('/Books/:id', FuncLib.asyncHandler(
     async(req, res, next) => {
-        try {
-            const book = await BookModel.findByPk(req.params.id);
-            if (book != null) {
-                res.render("details", { book });
-            } else {
-                res.render('error', { message: "Ooops! Something went wrong! The book id was not found!", errors: null });
-            }
-        } catch (error) {
-            res.render('error', { message: "Ooops! Something went wrong!", error });
+
+        const book = await BookModel.findByPk(req.params.id);
+        if (book != null) {
+            res.render("details", { book });
+        } else {
+            res.render('error', { message: "Ooops! Something went wrong! The book id was not found!", status: '' });
         }
     }
 ));
@@ -82,20 +79,18 @@ router.get('/Books/:id', FuncLib.asyncHandler(
     Check for the id param passed down from the url and see if that book exists, if so, try to modify that database entry.
 */
 router.post("/Books/:id/edit", FuncLib.asyncHandler(async(req, res, next) => {
-    try {
-        const book = await BookModel.findByPk(req.params.id);
-        if (book !== null) {
-            result = await FuncLib.modifyBook(req.body, book);
 
-            if (result.success) {
-                res.redirect("/");
-            }
-        } else {
-            res.render('error', { message: "Ooops! Something went wrong! The book id was not found!", errors: null });
+    const book = await BookModel.findByPk(req.params.id);
+    if (book !== null) {
+        result = await FuncLib.modifyBook(req.body, book);
+
+        if (result.success) {
+            res.redirect("/");
         }
-    } catch (error) {
-        res.render('error', { message: "Ooops! Something went wrong!", error });
+    } else {
+        res.render('error', { message: "Ooops! Something went wrong! The book id was not found!", status: '' });
     }
+
 }));
 
 /* POST delete an existing book id. 
@@ -103,23 +98,24 @@ router.post("/Books/:id/edit", FuncLib.asyncHandler(async(req, res, next) => {
 */
 router.post('/Books/:id/delete', FuncLib.asyncHandler(
     async(req, res, next) => {
-        try {
-            const book = await BookModel.findByPk(req.params.id);
-            if (book !== null) {
+
+        const book = await BookModel.findByPk(req.params.id);
+        if (book !== null) {
+            try {
                 BookModel.destroy({
                     where: {
                         id: book.id
                     }
                 });
                 res.redirect("/");
-
-            } else {
-                res.render('error', { message: "Ooops! Something went wrong! The book id was not found!", errors: null });
+            } catch (error) {
+                res.render('error', { message: "Ooops! Something went wrong!", status: error.status });
             }
-
-        } catch (error) {
-            res.render('error', { message: "Ooops! Something went wrong!", error });
+        } else {
+            res.render('error', { message: "Ooops! Something went wrong! The book id was not found!", status: '' });
         }
+
+
     }
 ));
 
