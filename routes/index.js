@@ -2,129 +2,125 @@ var express = require('express');
 var router = express.Router();
 var BookModel = require('../models').Book;
 
-/* Handler function to wrap each route. */
-function asyncHandler(cb) {
-    return async(req, res, next) => {
-        try {
-            await cb(req, res, next)
-        } catch (error) {
-            // Forward error to the global error handler
-            next(error);
+//import the function library
+var library = require('../FunctionLibrary.js');
+//some functions are wrapped up into a library class for organization
+var FuncLib = new library();
+//local stored books object
+var StoredBooks = null;
+
+
+/* GET home page. 
+    This is the only route that loads the database. If we come here first, load the database and redirect to books.
+*/
+router.get('/', FuncLib.asyncHandler(
+    async(req, res) => {
+        let result = await FuncLib.fetchBooks();
+
+        if (result.success) {
+            StoredBooks = result.bookData;
+            res.redirect('/Books');
         }
     }
-}
+));
 
-/* GET home page. */
-router.get('/', function(req, res, next) {
-
-    fetchBooks();
-
-    //res.render('index', { title: 'Express' });
-    res.redirect('/Books');
+/* GET books page. 
+    We assume the database has been loaded an stored in the StoredBooks object.
+*/
+router.get('/Books', (req, res, next) => {
+    //just incase the database is not loaded, handle it.
+    if (StoredBooks === null) {
+        res.render('error', { message: "Ooops! Something went wrong! The Database has not been loaded, please click home below!", errors: null });
+    } else {
+        res.render("index", { books: StoredBooks });
+    }
 });
-
-router.get('/Books', asyncHandler(async(req, res) => {
-    const books = await BookModel.findAll();
-
-    res.render("index", { books });
-}));
 
 router.get('/Books/new', (req, res, next) => {
 
     res.render('new');
 });
 
-router.post('/Books', asyncHandler(async(req, res) => {
-    const result = await addModifyBook(req.body);
+/* POST added new book. 
+    Uses function library to handle async callbacks.
+*/
+router.post('/Books', FuncLib.asyncHandler(
+    async(req, res) => {
+        try {
+            const result = await FuncLib.addModifyBook(req.body);
 
-    if (result.success) {
-        res.redirect("/Books");
-    } else {
-        res.render("formerror", { newBook: result.data, errors: result.errors })
-    }
-}));
-
-router.get('/Books/:id', asyncHandler(async(req, res, next) => {
-    const book = await BookModel.findByPk(req.params.id);
-    if (book) {
-        res.render("details", { book });
-    } else {
-        res.sendStatus(404);
-    }
-}));
-
-router.post("/Books/:id/edit", asyncHandler(async(req, res, next) => {
-    const book = await BookModel.findByPk(req.params.id);
-    if (book) {
-        result = await addModifyBook(req.body, book);
-
-        if (result.success) {
-            res.redirect("/Books");
+            if (result.success) {
+                res.redirect("/");
+            } else {
+                res.render("formerror", { newBook: result.data, errors: result.errors })
+            }
+        } catch (error) {
+            res.render('error', { message: "Ooops! Something went wrong!", errors: error });
         }
-    } else {
-        res.sendStatus(404);
     }
-}));
+));
 
-router.post('/Books/:id/delete', asyncHandler(async(req, res, next) => {
+/* GET book id for a book details page. 
+    Check for the id param passed down from the url and see if that book exists, if so, pass the data to the details page.
+*/
+router.get('/Books/:id', FuncLib.asyncHandler(
+    async(req, res, next) => {
+        try {
+            const book = await BookModel.findByPk(req.params.id);
+            if (book != null) {
+                res.render("details", { book });
+            } else {
+                res.render('error', { message: "Ooops! Something went wrong! The book id was not found!", errors: null });
+            }
+        } catch (error) {
+            res.render('error', { message: "Ooops! Something went wrong!", error });
+        }
+    }
+));
+
+/* POST modify an existing book id. 
+    Check for the id param passed down from the url and see if that book exists, if so, try to modify that database entry.
+*/
+router.post("/Books/:id/edit", FuncLib.asyncHandler(async(req, res, next) => {
     try {
         const book = await BookModel.findByPk(req.params.id);
-        if (book) {
-            BookModel.destroy({
-                where: {
-                    id: book.id
-                }
-            });
-            res.redirect("/Books");
+        if (book !== null) {
+            result = await FuncLib.addModifyBook(req.body, book);
 
+            if (result.success) {
+                res.redirect("/");
+            }
         } else {
-            res.sendStatus(404);
+            res.render('error', { message: "Ooops! Something went wrong! The book id was not found!", errors: null });
         }
-
     } catch (error) {
-
+        res.render('error', { message: "Ooops! Something went wrong!", error });
     }
 }));
 
-fetchBooks = async() => {
+/* POST delete an existing book id. 
+    Check for the id param passed down from the url and see if that book exists, if so, try to delete that database entry.
+*/
+router.post('/Books/:id/delete', FuncLib.asyncHandler(
+    async(req, res, next) => {
+        try {
+            const book = await BookModel.findByPk(req.params.id);
+            if (book !== null) {
+                BookModel.destroy({
+                    where: {
+                        id: book.id
+                    }
+                });
+                res.redirect("/");
 
-    try {
-        // ... All model instances
+            } else {
+                res.render('error', { message: "Ooops! Something went wrong! The book id was not found!", errors: null });
+            }
 
-        const Books = await BookModel.findAll();
-        console.log(Books.map(Books => Books.toJSON()));
-
-    } catch (error) {
-        console.error(error);
-    }
-}
-
-addModifyBook = async(formData, bookObject = null) => {
-    let bookData = {
-        title: formData.title,
-        author: formData.author,
-        genre: formData.genre,
-        year: formData.year
-    };
-
-    try {
-        if (bookObject !== null) {
-            newBook = await bookObject.update(bookData, {
-                where: { id: bookObject.id }
-            });
-            return { data: newBook, errors: [], success: true };
-        } else {
-            newBook = await BookModel.create(bookData);
-            return { data: newBook, errors: [], success: true };
-        }
-    } catch (error) {
-        if (error.name === "SequelizeValidationError") {
-            newBook = await BookModel.build(data);
-            return { data: newBook, errors: error.errors, success: false };
-        } else {
-            throw error;
+        } catch (error) {
+            res.render('error', { message: "Ooops! Something went wrong!", error });
         }
     }
-}
+));
 
 module.exports = router;
