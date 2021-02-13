@@ -25,11 +25,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-    next(createError(404));
-});
-
 // error handler
 app.use(function(err, req, res, next) {
     // set locals, only providing error in development
@@ -38,7 +33,7 @@ app.use(function(err, req, res, next) {
 
     // render the error page
     res.status(err.status || 500);
-    res.render('error', { message: "Ooops! This page does not exist on this site!", status: err.status });
+    res.render('error', { message: err.message, status: err.status });
 });
 
 begin = async() => {

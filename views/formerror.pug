@@ -6,4 +6,21 @@ block content
              each error in errors
                  li
                     =error.message
-    include new
+    div.form
+        h2 New Book
+        form(action="/books", method="post")
+            p
+                label(for='title') Title
+                input#title(name='title' type='text' value=formData.title)
+            p
+                label(for='author') Author
+                input#author(name='author' type='text' value=formData.author)
+            p
+                label(for='genre') Genre
+                input#genre(name='genre' type='text' value=formData.genre)
+            p
+                label(for='year') Year
+                input#year(name='year' type='text' value=formData.year)
+            p
+                input(type="submit" value='Create New Book')
+                a.button(href='/books') Cancel

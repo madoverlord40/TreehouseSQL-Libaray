@@ -3,7 +3,7 @@ extends layout
 block content
     div.form
         h2 New Book
-        form(action="/Books", method="post")
+        form(action="/books", method="post")
             p
                 label(for='title') Title
                 input#title(name='title' type='text')
@@ -18,4 +18,4 @@ block content
                 input#year(name='year' type='text')
             p
                 input(type="submit" value='Create New Book')
-                a.button(href='/Books') Cancel
+                a.button(href='/books') Cancel

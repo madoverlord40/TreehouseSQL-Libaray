@@ -11,66 +11,61 @@ var StoredBooks = null;
 
 
 /* GET home page. 
-    This is the only route that loads the database. If we come here first, load the database and redirect to books.
+    redirect to books.
 */
-router.get('/', FuncLib.asyncHandler(
+router.get('/', (req, res, next) => {
+    res.redirect('/books');
+});
+
+/* GET books page. 
+    load and store the database in the StoredBooks object and show listing.
+*/
+router.get('/books', FuncLib.asyncHandler(
+
     async(req, res) => {
         let result = await FuncLib.fetchBooks();
 
         if (result.success) {
             StoredBooks = result.bookData;
-            res.redirect('/Books');
+            res.render("index", { books: StoredBooks });
         }
     }
 ));
 
-/* GET books page. 
-    We assume the database has been loaded an stored in the StoredBooks object.
-*/
-router.get('/Books', (req, res, next) => {
-    //just incase the database is not loaded, handle it.
-    if (StoredBooks === null) {
-        res.render('error', { message: "Ooops! Something went wrong! The Database has not been loaded, please click home below!", status: '' });
-    } else {
-        res.render("index", { books: StoredBooks });
-    }
-});
+router.get('/books/new', (req, res, next) => {
 
-router.get('/Books/new', (req, res, next) => {
-
-    res.render('new');
+    res.render('new-book');
 });
 
 /* POST added new book. 
     Uses function library to handle async callbacks.
 */
-router.post('/Books', FuncLib.asyncHandler(
+router.post('/books', FuncLib.asyncHandler(
     async(req, res) => {
-        try {
-            const result = await FuncLib.addBook(req.body);
 
-            if (result.success) {
-                res.redirect("/");
-            } else {
-                res.render("formerror", { newBook: result.data, status: result.errors.status })
-            }
-        } catch (error) {
-            res.render('error', { message: "Ooops! Something went wrong!", status: error.status });
+        const result = await FuncLib.addBook(req.body);
+
+        if (result.success) {
+            res.redirect("/books");
+        } else {
+            res.render("formerror", { formData: result.data, errors: result.errors })
         }
+
     }
 ));
 
 /* GET book id for a book details page. 
     Check for the id param passed down from the url and see if that book exists, if so, pass the data to the details page.
 */
-router.get('/Books/:id', FuncLib.asyncHandler(
+router.get('/books/:id', FuncLib.asyncHandler(
     async(req, res, next) => {
 
         const book = await BookModel.findByPk(req.params.id);
         if (book != null) {
-            res.render("details", { book });
+            res.render("update-book", { book });
         } else {
-            res.render('error', { message: "Ooops! Something went wrong! The book id was not found!", status: '' });
+            const error = FuncLib.createErrorMessage(404, "Ooops! Something went wrong! The book id was not found!");
+            next(error);
         }
     }
 ));
@@ -78,7 +73,7 @@ router.get('/Books/:id', FuncLib.asyncHandler(
 /* POST modify an existing book id. 
     Check for the id param passed down from the url and see if that book exists, if so, try to modify that database entry.
 */
-router.post("/Books/:id/edit", FuncLib.asyncHandler(async(req, res, next) => {
+router.post("/books/:id/edit", FuncLib.asyncHandler(async(req, res, next) => {
 
     const book = await BookModel.findByPk(req.params.id);
     if (book !== null) {
@@ -86,13 +81,15 @@ router.post("/Books/:id/edit", FuncLib.asyncHandler(async(req, res, next) => {
             result = await FuncLib.modifyBook(req.body, book);
 
             if (result.success) {
-                res.redirect("/");
+                res.redirect('/books');
             }
         } catch (error) {
-            res.render('error', { message: "Ooops! Something went wrong!", status: error.status });
+            const err = FuncLib.createErrorMessage(500, error.message);
+            next(err);
         }
     } else {
-        res.render('error', { message: "Ooops! Something went wrong! The book id was not found!", status: '' });
+        const error = FuncLib.createErrorMessage(404, "Ooops! Something went wrong! The book id was not found!");
+        next(error);
     }
 
 }));
@@ -100,7 +97,7 @@ router.post("/Books/:id/edit", FuncLib.asyncHandler(async(req, res, next) => {
 /* POST delete an existing book id. 
     Check for the id param passed down from the url and see if that book exists, if so, try to delete that database entry.
 */
-router.post('/Books/:id/delete', FuncLib.asyncHandler(
+router.post('/books/:id/delete', FuncLib.asyncHandler(
     async(req, res, next) => {
 
         const book = await BookModel.findByPk(req.params.id);
@@ -111,12 +108,14 @@ router.post('/Books/:id/delete', FuncLib.asyncHandler(
                         id: book.id
                     }
                 });
-                res.redirect("/");
+                res.redirect('/books');
             } catch (error) {
-                res.render('error', { message: "Ooops! Something went wrong!", status: error.status });
+                const err = FuncLib.createErrorMessage(500, "Ooops! Something went wrong!");
+                next(err);
             }
         } else {
-            res.render('error', { message: "Ooops! Something went wrong! The book id was not found!", status: '' });
+            const error = FuncLib.createErrorMessage(404, "Ooops! Something went wrong! The book id was not found!");
+            next(error);
         }
     }
 ));

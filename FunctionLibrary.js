@@ -30,6 +30,14 @@ class FunctionLibrary {
         return null;
     }
 
+    createErrorMessage(statusCode, message) {
+        const error = new Error();
+        error.status = statusCode;
+        error.message = message;
+
+        return error;
+    }
+
     //Async function that takes form sumbission data to create and add a new book into the database
     async addBook(formData) {
 
@@ -49,7 +57,7 @@ class FunctionLibrary {
 
             } catch (error) {
                 if (error.name === "SequelizeValidationError") {
-                    newBook = await BookModel.build(data);
+                    let newBook = await BookModel.build(bookData);
                     return { data: newBook, errors: error.errors, success: false };
                 } else {
                     throw error;
