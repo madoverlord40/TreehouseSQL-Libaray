@@ -25,24 +25,34 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 
-// error handler
-app.use(function(req, res, next) {
+/* ERROR HANDLERS */
 
-    // render the error page
+/* 404 handler to catch undefined or non-existent route requests */
+app.use((req, res, next) => {
+
+    console.log('404 error handler called');
+
+    /* TODO 1: Send a response to the client
+      - Set the response status to 404
+      - Render the 'not-found' view
+    */
     res.status(404).render('page-not-found');
-
 });
 
 
-// error handler
-app.use(function(err, req, res, next) {
-    // set locals, only providing error in development
-    res.locals.message = err.message;
-    res.locals.error = req.app.get('env') === 'development' ? err : {};
+/* Global error handler */
+app.use((err, req, res, next) => {
 
-    // render the error page
-    res.status(err.status || 500);
-    res.render('error', { message: err.message, status: err.status });
+    if (err) {
+        console.log('Global error handler called', err);
+
+        if (err.status === 404) {
+            res.status(404).render('page-not-found', { err });
+        } else {
+            err.message = err.message || `Oops!  It looks like something went wrong on the server.`;
+            res.status(err.status || 500).render('error', { err });
+        }
+    }
 });
 
 begin = async() => {

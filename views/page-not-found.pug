@@ -1,12 +1,15 @@
 extends layout
 
 block content
-  head
-    title Page Not Found
-    link(rel='stylesheet' href='../public/stylesheets/style.css')
-  h2 Page Not Found
-    p Sorry! We couldn't find the page you were looking for.
-  br
-  p
-    div 
-      a.button(href='/books') Home
+  div.container
+    h1= `404 - Page Not Found`
+    p.not-found-p= `Oops!  It looks like the page you're looking for does not exist.`
+
+    a.home(href=`/`) Home
+
+    if err
+
+      div.not-found-stack
+        hr
+        
+        pre #{err.stack}

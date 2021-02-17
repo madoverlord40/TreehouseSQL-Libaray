@@ -17,6 +17,19 @@ router.get('/', (req, res, next) => {
     res.redirect('/books');
 });
 
+
+/* GET generated error route - create and throw 500 server error */
+router.get('/error', (req, res, next) => {
+
+    // Log out custom error handler indication
+    console.log('Custom error route called');
+
+    const err = new Error();
+    err.message = `Custom 500 error thrown`
+    err.status = 500;
+    throw err;
+});
+
 /* GET books page. 
     load and store the database in the StoredBooks object and show listing.
 */
