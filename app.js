@@ -26,6 +26,15 @@ app.use('/', indexRouter);
 app.use('/users', usersRouter);
 
 // error handler
+app.use(function(req, res, next) {
+
+    // render the error page
+    res.status(404).render('page-not-found');
+
+});
+
+
+// error handler
 app.use(function(err, req, res, next) {
     // set locals, only providing error in development
     res.locals.message = err.message;
